@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Successful</title>
+</head>
+
+<body>
+
+    <h1>Payment Successful!</h1>
+
+    <p>
+        Thank you for purchasing <strong>Win More on Bets</strong>.
+    </p>
+
+    <p id="status">Verifying your payment...</p>
+
+    <button id="downloadButton" style="display: none;">
+        Download Your Book
+    </button>
+
+    <script>
+        const API_URL = "https://winmore-backend.onrender.com";
+
+        const statusText =
+            document.getElementById("status");
+
+        const downloadButton =
+            document.getElementById("downloadButton");
+
+        const params =
+            new URLSearchParams(window.location.search);
+
+        const reference =
+            params.get("reference");
+
+        let downloadUrl = null;
+
+
+        // Verify payment
+        async function verifyPayment() {
+
+            if (!reference) {
+                statusText.textContent =
+                    "Payment reference is missing.";
+                return;
+            }
+
+            try {
+
+                const response = await fetch(
+                    `${API_URL}/api/payment/status/${reference}/`
+                );
+
+                const data = await response.json();
+
+                if (!response.ok || !data.status) {
+
+                    statusText.textContent =
+                        data.message ||
+                        "Payment could not be verified.";
+
+                    return;
+                }
+
+                if (data.payment_status === "paid") {
+
+                    statusText.textContent =
+                        "Your payment has been confirmed.";
+
+                    downloadUrl =
+                        data.download_url;
+
+                    downloadButton.style.display =
+                        "inline-block";
+
+                } else {
+
+                    statusText.textContent =
+                        "Your payment is still being processed.";
+
+                }
+
+            } catch (error) {
+
+                console.error(error);
+
+                statusText.textContent =
+                    "Unable to verify payment. Please try again.";
+
+            }
+        }
+
+
+        // Download book
+        downloadButton.addEventListener(
+            "click",
+            async function () {
+
+                if (!downloadUrl) {
+                    return;
+                }
+
+                downloadButton.disabled = true;
+
+                downloadButton.textContent =
+                    "Preparing download...";
+
+                try {
+
+                    const response =
+                        await fetch(downloadUrl);
+
+                    if (!response.ok) {
+
+                        let errorMessage =
+                            "Download unavailable.";
+
+                        try {
+
+                            const data =
+                                await response.json();
+
+                            errorMessage =
+                                data.message ||
+                                errorMessage;
+
+                        } catch (error) {
+                            // Response was not JSON
+                        }
+
+                        throw new Error(errorMessage);
+                    }
+
+                    const blob =
+                        await response.blob();
+
+                    const url =
+                        window.URL.createObjectURL(blob);
+
+                    const link =
+                        document.createElement("a");
+
+                    link.href = url;
+
+                    link.download =
+                        "Win-More-on-Bets.pdf";
+
+                    document.body.appendChild(link);
+
+                    link.click();
+
+                    link.remove();
+
+                    window.URL.revokeObjectURL(url);
+
+                    downloadButton.textContent =
+                        "Download Completed";
+
+                } catch (error) {
+
+                    console.error(error);
+
+                    alert(error.message);
+
+                    downloadButton.disabled =
+                        false;
+
+                    downloadButton.textContent =
+                        "Download Your Book";
+                }
+
+            }
+        );
+
+
+        verifyPayment();
+    </script>
+
+</body>
+</html>
