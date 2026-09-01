@@ -27,14 +27,13 @@ const ctaButtons = [
 ];
 
 // ============================================
-// GALLERY & LIGHTBOX
+// LIGHTBOX FUNCTIONALITY
 // ============================================
 
 const galleryItems = document.querySelectorAll(".gallery-item");
 let currentImageIndex = 0;
 let galleryImages = [];
 
-// Initialize gallery
 function initializeGallery() {
     galleryImages = Array.from(galleryItems).map((item) => ({
         src: item.querySelector("img").src,
@@ -83,7 +82,6 @@ if (lightboxNext) {
     lightboxNext.addEventListener("click", showNextImage);
 }
 
-// Close lightbox on ESC key
 document.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && lightbox.classList.contains("active")) {
         closeLightbox();
@@ -94,7 +92,6 @@ document.addEventListener("keydown", (e) => {
     }
 });
 
-// Close lightbox on background click
 lightbox.addEventListener("click", (e) => {
     if (e.target === lightbox) {
         closeLightbox();
@@ -102,7 +99,7 @@ lightbox.addEventListener("click", (e) => {
 });
 
 // ============================================
-// PAYMENT MODAL
+// PAYMENT MODAL FUNCTIONS
 // ============================================
 
 function openPaymentModal() {
@@ -214,21 +211,6 @@ paymentForm.addEventListener("submit", async (event) => {
 
         buyButton.disabled = false;
     }
-});
-
-// ============================================
-// SMOOTH SCROLLING
-// ============================================
-
-document.querySelectorAll("a[href^='#']").forEach((anchor) => {
-    anchor.addEventListener("click", (e) => {
-        const href = anchor.getAttribute("href");
-        if (href === "#" || !document.querySelector(href)) return;
-        
-        e.preventDefault();
-        const target = document.querySelector(href);
-        target.scrollIntoView({ behavior: "smooth" });
-    });
 });
 
 // ============================================
