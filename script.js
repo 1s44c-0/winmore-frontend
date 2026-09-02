@@ -5,7 +5,8 @@
 const API_URL = "https://winmore-backend.onrender.com";
 
 // ============================================
-// DOM ELEMENTS
+// PRODUCT PAGE: PAYMENT MODAL + CHECKOUT
+// (elements only exist on index.html)
 // ============================================
 
 const paymentModal = document.getElementById("payment-modal");
@@ -14,209 +15,220 @@ const buyButton = document.getElementById("buyButton");
 const message = document.getElementById("message");
 const modalClose = document.getElementById("modal-close");
 
-const lightbox = document.getElementById("lightbox");
-const lightboxImage = document.getElementById("lightbox-image");
-const lightboxClose = document.getElementById("lightbox-close");
-const lightboxPrev = document.getElementById("lightbox-prev");
-const lightboxNext = document.getElementById("lightbox-next");
-
 const ctaButtons = [
     document.getElementById("header-cta"),
     document.getElementById("cta-hero"),
     document.getElementById("cta-final")
-];
-
-// ============================================
-// LIGHTBOX FUNCTIONALITY
-// ============================================
-
-const galleryItems = document.querySelectorAll(".gallery-item");
-let currentImageIndex = 0;
-let galleryImages = [];
-
-function initializeGallery() {
-    galleryImages = Array.from(galleryItems).map((item) => ({
-        src: item.querySelector("img").src,
-        alt: item.querySelector("img").alt
-    }));
-
-    galleryItems.forEach((item, index) => {
-        item.addEventListener("click", () => openLightbox(index));
-    });
-}
-
-function openLightbox(index) {
-    currentImageIndex = index;
-    lightboxImage.src = galleryImages[index].src;
-    lightboxImage.alt = galleryImages[index].alt;
-    lightbox.classList.add("active");
-    document.body.style.overflow = "hidden";
-}
-
-function closeLightbox() {
-    lightbox.classList.remove("active");
-    document.body.style.overflow = "auto";
-}
-
-function showPrevImage() {
-    currentImageIndex = (currentImageIndex - 1 + galleryImages.length) % galleryImages.length;
-    lightboxImage.src = galleryImages[currentImageIndex].src;
-    lightboxImage.alt = galleryImages[currentImageIndex].alt;
-}
-
-function showNextImage() {
-    currentImageIndex = (currentImageIndex + 1) % galleryImages.length;
-    lightboxImage.src = galleryImages[currentImageIndex].src;
-    lightboxImage.alt = galleryImages[currentImageIndex].alt;
-}
-
-if (lightboxClose) {
-    lightboxClose.addEventListener("click", closeLightbox);
-}
-
-if (lightboxPrev) {
-    lightboxPrev.addEventListener("click", showPrevImage);
-}
-
-if (lightboxNext) {
-    lightboxNext.addEventListener("click", showNextImage);
-}
-
-document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && lightbox.classList.contains("active")) {
-        closeLightbox();
-    }
-    if (lightbox.classList.contains("active")) {
-        if (e.key === "ArrowLeft") showPrevImage();
-        if (e.key === "ArrowRight") showNextImage();
-    }
-});
-
-lightbox.addEventListener("click", (e) => {
-    if (e.target === lightbox) {
-        closeLightbox();
-    }
-});
-
-// ============================================
-// PAYMENT MODAL FUNCTIONS
-// ============================================
+].filter(Boolean);
 
 function openPaymentModal() {
+    if (!paymentModal) return;
     paymentModal.classList.add("active");
     document.body.style.overflow = "hidden";
-    document.getElementById("email").focus();
+    const emailInput = document.getElementById("email");
+    if (emailInput) emailInput.focus();
 }
 
 function closePaymentModal() {
+    if (!paymentModal) return;
     paymentModal.classList.remove("active");
     document.body.style.overflow = "auto";
     resetPaymentForm();
 }
 
-// CTA buttons open payment modal
-ctaButtons.forEach((btn) => {
-    if (btn) {
-        btn.addEventListener("click", (e) => {
-            e.preventDefault();
-            openPaymentModal();
-        });
-    }
-});
-
-// Close modal button
-if (modalClose) {
-    modalClose.addEventListener("click", closePaymentModal);
-}
-
-// Close modal on background click
-paymentModal.addEventListener("click", (e) => {
-    if (e.target === paymentModal) {
-        closePaymentModal();
-    }
-});
-
-// Close modal on ESC key
-document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && paymentModal.classList.contains("active")) {
-        closePaymentModal();
-    }
-});
-
-// ============================================
-// PAYMENT FORM (EXISTING LOGIC - PRESERVED)
-// ============================================
-
 function resetPaymentForm() {
     if (paymentForm) {
         paymentForm.reset();
     }
-    message.textContent = "";
-    message.className = "message";
+    if (message) {
+        message.textContent = "";
+        message.className = "message";
+    }
     if (buyButton) {
         buyButton.disabled = false;
     }
 }
 
 function showMessage(text, type) {
+    if (!message) return;
     message.textContent = text;
     message.className = `message ${type}`;
 }
 
-paymentForm.addEventListener("submit", async (event) => {
-    event.preventDefault();
+if (paymentModal) {
+    // CTA buttons open the payment modal
+    ctaButtons.forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+            e.preventDefault();
+            openPaymentModal();
+        });
+    });
 
-    const email = document.getElementById("email").value.trim();
-
-    if (!email) {
-        showMessage("Please enter your email.", "error");
-        return;
+    if (modalClose) {
+        modalClose.addEventListener("click", closePaymentModal);
     }
 
-    buyButton.disabled = true;
-    showMessage("Initializing payment...", "");
+    // Close modal on background click
+    paymentModal.addEventListener("click", (e) => {
+        if (e.target === paymentModal) {
+            closePaymentModal();
+        }
+    });
 
-    try {
-        const response = await fetch(
-            `${API_URL}/api/payment/initialize/`,
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    email: email
-                })
-            }
-        );
+    // Close modal on ESC key
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && paymentModal.classList.contains("active")) {
+            closePaymentModal();
+        }
+    });
+}
 
-        const data = await response.json();
+// Payment form submission (existing logic — preserved)
+if (paymentForm) {
+    paymentForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
 
-        if (!response.ok || !data.status) {
-            throw new Error(
-                data.message || "Payment initialization failed."
-            );
+        const emailInput = document.getElementById("email");
+        const email = emailInput ? emailInput.value.trim() : "";
+
+        if (!email) {
+            showMessage("Please enter your email.", "error");
+            return;
         }
 
-        // Redirect customer to Paystack
-        window.location.href = data.authorization_url;
+        if (buyButton) buyButton.disabled = true;
+        showMessage("Initializing payment...", "");
 
-    } catch (error) {
-        console.error(error);
+        try {
+            const response = await fetch(
+                `${API_URL}/api/payment/initialize/`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        email: email
+                    })
+                }
+            );
 
-        showMessage(
-            error.message || "Something went wrong. Please try again.",
-            "error"
-        );
+            const data = await response.json();
 
-        buyButton.disabled = false;
+            if (!response.ok || !data.status) {
+                throw new Error(
+                    data.message || "Payment initialization failed."
+                );
+            }
+
+            // Redirect customer to Paystack
+            window.location.href = data.authorization_url;
+
+        } catch (error) {
+            console.error(error);
+
+            showMessage(
+                error.message || "Something went wrong. Please try again.",
+                "error"
+            );
+
+            if (buyButton) buyButton.disabled = false;
+        }
+    });
+}
+
+// ============================================
+// SUCCESS PAGE: VERIFY PAYMENT + DOWNLOAD
+// (elements only exist on success.html)
+// ============================================
+
+const statusText = document.getElementById("status");
+const downloadButton = document.getElementById("downloadButton");
+
+if (statusText && downloadButton) {
+    const params = new URLSearchParams(window.location.search);
+    const reference = params.get("reference");
+
+    let downloadUrl = null;
+
+    async function verifyPayment() {
+        if (!reference) {
+            statusText.textContent = "Payment reference is missing.";
+            return;
+        }
+
+        try {
+            const response = await fetch(
+                `${API_URL}/api/payment/status/${reference}/`
+            );
+
+            const data = await response.json();
+
+            if (!response.ok || !data.status) {
+                statusText.textContent =
+                    data.message || "Payment could not be verified.";
+                return;
+            }
+
+            if (data.payment_status === "paid") {
+                statusText.textContent = "Your payment has been confirmed.";
+                downloadUrl = data.download_url;
+                downloadButton.style.display = "inline-flex";
+            } else {
+                statusText.textContent = "Your payment is still being processed.";
+            }
+
+        } catch (error) {
+            console.error(error);
+            statusText.textContent = "Unable to verify payment. Please try again.";
+        }
     }
-});
 
-// ============================================
-// INITIALIZATION
-// ============================================
+    downloadButton.addEventListener("click", async function () {
+        if (!downloadUrl) return;
 
-document.addEventListener("DOMContentLoaded", () => {
-    initializeGallery();
-});
+        downloadButton.disabled = true;
+        downloadButton.textContent = "Preparing download...";
+
+        try {
+            const response = await fetch(downloadUrl);
+
+            if (!response.ok) {
+                let errorMessage = "Download unavailable.";
+
+                try {
+                    const data = await response.json();
+                    errorMessage = data.message || errorMessage;
+                } catch (error) {
+                    // Response was not JSON
+                }
+
+                throw new Error(errorMessage);
+            }
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement("a");
+
+            link.href = url;
+            link.download = "Win-More-on-Bets.pdf";
+
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+
+            window.URL.revokeObjectURL(url);
+
+            downloadButton.textContent = "Download Completed";
+
+        } catch (error) {
+            console.error(error);
+            alert(error.message);
+
+            downloadButton.disabled = false;
+            downloadButton.textContent = "Download Your Book";
+        }
+    });
+
+    verifyPayment();
+}
