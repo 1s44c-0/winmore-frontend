@@ -510,7 +510,8 @@ img {
     width: 100%;
     padding: 15px 24px;
     background-color: var(--accent-blue);
-    color: #04121A;
+    color: #FFFFFF;
+    text-align: center;
     border: none;
     border-radius: var(--radius-sm);
     font-size: 14px;
